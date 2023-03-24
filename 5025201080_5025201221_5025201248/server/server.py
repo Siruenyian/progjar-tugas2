@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup
 from urllib.request import urlopen
 import queue
 from random import randint
@@ -10,8 +11,14 @@ from time import sleep
 from html.parser import HTMLParser
 from configparser import ConfigParser
 
-# Read the config file in the server folder
+
 config_object = ConfigParser()
-config_object.read("./5025201080_5025201221_5025201248/server/httpserver.conf")
+config_object.read("./server/httpserver.conf")
 userinfo = config_object["Server"]
-# print("port is {}".format(userinfo.get("port")))
+print("port is {}".format(userinfo.get("port")))
+
+response = urlopen('https://classroom.its.ac.id').read()
+soup = BeautifulSoup(response)
+
+print(soup.title.string)
+print(soup.get_text())
