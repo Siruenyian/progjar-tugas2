@@ -1,15 +1,16 @@
-from bs4 import BeautifulSoup
-from urllib.request import urlopen
 import queue
 from random import randint
 import select
 import socket
 import sys
 from threading import Thread
-import bs4
 from time import sleep
-from html.parser import HTMLParser
 from configparser import ConfigParser
+
+# Extra libraries for the first few numbers
+import ssl
+from bs4 import BeautifulSoup
+import re
 
 
 config_object = ConfigParser()
@@ -18,11 +19,6 @@ userinfo = config_object["Server"]
 print("port is {}".format(userinfo.get("port")))
 HOST = userinfo.get('host')
 PORT = int(userinfo.get("port"))
-# response = urlopen('https://classroom.its.ac.id').read()
-# soup = BeautifulSoup(response)
-
-# print(soup.title.string)
-# print(soup.get_text())
 
 
 class ProcessThread(Thread):
@@ -95,6 +91,59 @@ def cleanup():
     thread.stop()
     thread.join()
 
+# Method to formally request http protocol with socket
+
+
+def connect(HOST):
+    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_address = (HOST, 443)
+    client_socket.connect(server_address)
+    # We have to warp this since it's a https(?)
+    client_socket = ssl.wrap_socket(
+        client_socket, ssl_version=ssl.PROTOCOL_SSLv23)
+    request_header = 'GET / HTTP/1.1\r\nHost:{0}\r\n\r\n'.format(
+        HOST)
+    client_socket.send(request_header.encode())
+    response = ''
+    while True:
+        received = client_socket.recv(1028)
+        if not received:
+            break
+        response += received.decode('utf-8')
+    client_socket.close()
+
+    document = response.split('\r\n\r\n')
+    headers = document[0]
+    # in bytes
+    htmldoc = document[1].encode()
+
+    output = {}
+    # Regex to sokit key value of headers
+    result = re.findall(r"([\w-]+): (.*)\r", headers[1:])
+    output = dict(result)
+    if output["Content-Type"]:
+        output["Content-Type"] = output["Content-Type"].split(' ')
+    output["status"] = headers.split('\r\n')[0].split(" ", 1)
+    return output, htmldoc
+
 
 if __name__ == "__main__":
+    headers, body = connect('www.its.ac.id')
+    # print(headers)
+    # 1. HTTP resp header
+    print(headers["status"][1])
+    # 2. content encoding
+    # Still throws an error because if we pass a contenc encoding, the body will be ncoded
+    # and I dont know how to decode it
+    # print(headers["Content-Encoding"])
+    # 3. HTTP version
+    print(headers["status"][0])
+
+    headers, body = connect('classroom.its.ac.id')
+    # 4. Content type
+    print(headers["Content-Type"][1])
+    # 5.Parse
+    # Doesnt work if number 2 is enabled
+    soup = BeautifulSoup(body)
+    print(soup.prettify())
     main()
