@@ -12,9 +12,13 @@ import ssl
 from bs4 import BeautifulSoup
 import re
 
+# For directory listing
+from os import listdir
+from os.path import exists
+
 
 config_object = ConfigParser()
-config_object.read("./5025201080_5025201221_5025201248/server/httpserver.conf")
+config_object.read("httpserver.conf")
 userinfo = config_object["Server"]
 print("port is {}".format(userinfo.get("port")))
 HOST = userinfo.get('host')
@@ -92,6 +96,101 @@ def cleanup():
     thread.join()
 
 # Method to formally request http protocol with socket
+def useSelect():
+
+    server_address = (HOST, PORT)
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server_socket.bind(server_address)
+    server_socket.listen(5)
+
+    input_socket = [server_socket]
+
+    try:
+        while True:
+            read_ready, write_ready, exception = select.select(input_socket, [], [])
+            
+            for sock in read_ready:
+                if sock == server_socket:
+                    client_socket, client_address = server_socket.accept()
+                    print(client_address)
+                    input_socket.append(client_socket)                       
+                
+                else:                
+                    # receive data from client, break when null received          
+                    data = sock.recv(4096)
+                    
+                    data = data.decode('utf-8')
+                    request_header = data.split('\r\n')
+                    temp = request_header[0].split()
+                    if(len(temp) > 1):
+                        request_file = temp[1]
+                        response_header = b''
+                        response_data = b''
+                        
+                        if request_file == 'index.html' or request_file == '/' or request_file == '/index.html':
+                            f = open('index.html', 'r')
+                            response_data = f.read()
+                            f.close()
+                            
+                            content_length = len(response_data)
+                            response_header = 'HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
+                                            + str(content_length) + '\r\n\r\n'
+
+                            sock.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+                        
+                        elif request_file == 'dataset' or request_file == '/dataset':
+                            files = []
+                            for file in listdir('dataset'):
+                                files.insert(len(files), '<p>' + file + '</p>')
+                            
+                            response_data = '\r\n'.join(files)
+                            content_length = len(response_data)
+                            response_header = 'HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
+                                            + str(content_length) + '\r\n\r\n'
+
+                            sock.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+
+                        elif 'dataset/' in request_file or '/dataset/' in request_file:
+                            tempFile = request_file.split('/')
+                            fileLoc = tempFile[len(tempFile)-1]
+                            fileToRead = ''
+                            if exists('dataset/' + fileLoc):
+                                fileToRead = 'dataset/' + fileLoc
+                                f = open(fileToRead, 'rb')
+                                response_data = f.read()
+                                f.close()
+                                content_length = len(response_data)
+                                response_header = 'HTTP/1.1 200 OK\r\nContent-Type: multipart/form-data;\r\nContent-Length:' \
+                                                + str(content_length) + '\r\n\r\n'
+
+                                sock.sendall(response_header.encode('utf-8') + response_data)
+
+                            else:
+                                f = open('404.html', 'r')
+                                response_data = f.read()
+                                f.close()
+                                content_length = len(response_data)
+                                response_header = 'HTTP/1.1 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
+                                                + str(content_length) + '\r\n\r\n'
+
+                                sock.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+
+                        else:
+                            f = open('404.html', 'r')
+                            response_data = f.read()
+                            f.close()
+                            
+                            content_length = len(response_data)
+                            response_header = 'HTTP/1.1 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
+                                            + str(content_length) + '\r\n\r\n'
+
+                            sock.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+
+    except KeyboardInterrupt:        
+        server_socket.close()
+        sys.exit(0)
+
 
 
 def connect(HOST):
@@ -141,23 +240,24 @@ def parse(input):
         print(text)
 
 if __name__ == "__main__":
-    headers, body = connect('www.its.ac.id')
-    # # print(headers)
-    # # 1. HTTP resp header
-    print(headers["status"][1])
-    # # 2. content encoding
-    # # Still throws an error because if we pass a contenc encoding, the body will be ncoded
-    # # and I dont know how to decode it
-    # # print(headers["Content-Encoding"])
-    # # 3. HTTP version
-    print(headers["status"][0])
+    # headers, body = connect('www.its.ac.id')
+    # # # print(headers)
+    # # # 1. HTTP resp header
+    # print(headers["status"][1])
+    # # # 2. content encoding
+    # # # Still throws an error because if we pass a contenc encoding, the body will be ncoded
+    # # # and I dont know how to decode it
+    # # # print(headers["Content-Encoding"])
+    # # # 3. HTTP version
+    # print(headers["status"][0])
 
-    headers, body = connect('classroom.its.ac.id')
-    # 4. Content type
-    print(headers["Content-Type"][1])
-    # 5.Parse
-    # Doesnt work if number 2 is enabled
-    soup = BeautifulSoup(body)
-    parse(soup)
+    # headers, body = connect('classroom.its.ac.id')
+    # # 4. Content type
+    # print(headers["Content-Type"][1])
+    # # 5.Parse
+    # # Doesnt work if number 2 is enabled
+    # soup = BeautifulSoup(body)
+    # parse(soup)
     
-    main()
+    # main()
+    useSelect()
