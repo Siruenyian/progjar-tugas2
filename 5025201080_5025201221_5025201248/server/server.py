@@ -80,7 +80,7 @@ class Client(Thread):
                         response_header = 'HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
                                           + str(content_length) + '\r\n\r\n'
 
-                        self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+                        self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8') + b'\0')
 
                     elif request_file == 'dataset' or request_file == '/dataset':
                         files = []
@@ -92,7 +92,7 @@ class Client(Thread):
                         response_header = 'HTTP/1.1 200 OK\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
                                           + str(content_length) + '\r\n\r\n'
 
-                        self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+                        self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8') + b'\0')
 
                     elif 'dataset/' in request_file or '/dataset/' in request_file:
                         tempFile = request_file.split('/')
@@ -106,7 +106,7 @@ class Client(Thread):
                             response_header = 'HTTP/1.1 200 OK\r\nContent-Type: multipart/form-data;\r\nContent-Length:' \
                                               + str(content_length) + '\r\n\r\n'
 
-                            self.client.sendall(response_header.encode('utf-8') + response_data)
+                            self.client.sendall(response_header.encode('utf-8') + response_data + b'\0')
 
                         else:
                             f = open('404.html', 'r')
@@ -116,7 +116,7 @@ class Client(Thread):
                             response_header = 'HTTP/1.1 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
                                               + str(content_length) + '\r\n\r\n'
 
-                            self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+                            self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8') + b'\0')
 
                     else:
                         f = open('404.html', 'r')
@@ -127,7 +127,7 @@ class Client(Thread):
                         response_header = 'HTTP/1.1 404 Not Found\r\nContent-Type: text/html; charset=UTF-8\r\nContent-Length:' \
                                           + str(content_length) + '\r\n\r\n'
 
-                        self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8'))
+                        self.client.sendall(response_header.encode('utf-8') + response_data.encode('utf-8') + b'\0')
             else:
                 self.client.close()
                 running = 0
