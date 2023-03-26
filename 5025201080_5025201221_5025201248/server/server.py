@@ -126,17 +126,30 @@ def connect(HOST):
     output["status"] = headers.split('\r\n')[0].split(" ", 1)
     return output, htmldoc
 
+def parse(input):
+    ul = input.find_all('ul')
+    rawText = ul[0].get_text()
+    rawList = rawText.split('\n')
+    texts = []
+
+    for element in rawList:
+        temp = element.strip()
+        if(len(temp) > 0):
+            texts.insert(len(texts), temp)
+    
+    for text in texts:
+        print(text)
 
 if __name__ == "__main__":
     headers, body = connect('www.its.ac.id')
-    # print(headers)
-    # 1. HTTP resp header
+    # # print(headers)
+    # # 1. HTTP resp header
     print(headers["status"][1])
-    # 2. content encoding
-    # Still throws an error because if we pass a contenc encoding, the body will be ncoded
-    # and I dont know how to decode it
-    # print(headers["Content-Encoding"])
-    # 3. HTTP version
+    # # 2. content encoding
+    # # Still throws an error because if we pass a contenc encoding, the body will be ncoded
+    # # and I dont know how to decode it
+    # # print(headers["Content-Encoding"])
+    # # 3. HTTP version
     print(headers["status"][0])
 
     headers, body = connect('classroom.its.ac.id')
@@ -145,5 +158,6 @@ if __name__ == "__main__":
     # 5.Parse
     # Doesnt work if number 2 is enabled
     soup = BeautifulSoup(body)
-    print(soup.prettify())
+    parse(soup)
+    
     main()

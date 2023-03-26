@@ -1,15 +1,21 @@
 # Tugas 2 Progjar
+
 reporstori tugas 2 progjar
+
 ## Virtual Environment
-create with 
+
+create with
+
 ```python
 python -m venv venv
 ```
-then cd to 
-```
+
+then cd to
+
+```bash
 venv\Scripts\Activate
 ```
 
 ## Dependency Intallation
-Refer to 
-https://learnpython.com/blog/python-requirements-file/
+
+Refer to <https://learnpython.com/blog/python-requirements-file/>
